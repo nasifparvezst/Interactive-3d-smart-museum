@@ -1,0 +1,14 @@
+*.exe
+*.o
+*.obj
+*.out
+
+bin/
+obj/
+build/
+
+.vscode/
+.idea/
+
+*.layout
+*.depend
