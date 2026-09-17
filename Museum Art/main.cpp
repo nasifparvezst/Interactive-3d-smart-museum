@@ -11,7 +11,25 @@
 #include <cmath>
 #include <string>
 
-
+// ================================================================
+// Interactive 3D Smart Museum & Art Gallery
+// Early Improved Version / Commit 2
+// CSE 444 Computer Graphics Project
+//
+// Development added after Commit 1:
+// - One-floor museum retained
+// - More wall artwork and gallery decoration
+// - Reception desk + entrance clock
+// - Simple room signs and wall lamps
+// - Added a second animal exhibit (Asian Elephant placeholder)
+// - More benches/plants and exhibit labels
+// - First-person WASD + mouse look
+// - Tiger transformation controls retained
+// - Basic lighting/materials preserved
+//
+// Later commits can add improved animals, more rooms, staircase,
+// second floor, textures, smart exhibit info, advanced labels, etc.
+// ================================================================
 
 constexpr float PI = 3.14159265358979323846f;
 
@@ -195,6 +213,108 @@ void drawSimpleTiger() {
     glPopMatrix();
 }
 
+
+void drawSimpleElephant(float x,float z) {
+    // Commit 2 placeholder elephant: simple but recognizable.
+    const float G  = 0.48f;
+    const float G2 = 0.40f;
+    const float IV = 0.88f;
+
+    glPushMatrix();
+    glTranslatef(x,0.50f,z);
+
+    // body + head
+    glPushMatrix();
+    glScalef(1.70f,1.05f,0.95f);
+    drawSphere(0.0f,1.25f,0.0f,0.95f,G,G,G);
+    glPopMatrix();
+
+    drawSphere(1.45f,1.45f,0.0f,0.72f,G2,G2,G2);
+
+    // ears
+    glPushMatrix();
+    glTranslatef(1.25f,1.52f,0.58f);
+    glScalef(0.16f,0.72f,0.62f);
+    drawSphere(0,0,0,1.0f,0.43f,0.38f,0.38f);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(1.25f,1.52f,-0.58f);
+    glScalef(0.16f,0.72f,0.62f);
+    drawSphere(0,0,0,1.0f,0.43f,0.38f,0.38f);
+    glPopMatrix();
+
+    // legs
+    for(float lx : {-0.85f,0.65f}) {
+        for(float lz : {-0.52f,0.52f}) {
+            drawCylinder(lx,0.05f,lz,0.20f,0.90f,G2,G2,G2);
+            drawSphere(lx,0.08f,lz,0.25f,0.36f,0.36f,0.36f);
+        }
+    }
+
+    // trunk
+    drawCylinder(1.83f,0.78f,0.0f,0.13f,1.05f,G2,G2,G2);
+    drawSphere(1.83f,0.73f,0.0f,0.16f,G2,G2,G2);
+
+    // tusks
+    glPushMatrix();
+    glTranslatef(1.72f,1.12f,0.32f);
+    glRotatef(15,0,0,1);
+    setMaterial(IV,IV,0.72f,18,0.08f);
+    glutSolidCone(0.08f,0.65f,16,6);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(1.72f,1.12f,-0.32f);
+    glRotatef(15,0,0,1);
+    setMaterial(IV,IV,0.72f,18,0.08f);
+    glutSolidCone(0.08f,0.65f,16,6);
+    glPopMatrix();
+
+    // eye
+    drawSphere(1.80f,1.65f,0.48f,0.055f,0.03f,0.03f,0.03f);
+
+    glPopMatrix();
+}
+
+void drawReceptionDesk() {
+    drawBox(0,0.55f,6.2f,7.2f,1.10f,1.6f,0.34f,0.16f,0.07f,32,0.30f);
+    drawBox(0,1.20f,6.2f,7.5f,0.22f,1.9f,0.48f,0.26f,0.10f,34,0.30f);
+    drawStrokeText("RECEPTION",-2.10f,1.34f,5.34f,0.0031f,0.92f,0.82f,0.54f);
+}
+
+void drawSimpleClock() {
+    glPushMatrix();
+    glTranslatef(0,5.75f,11.45f);
+    glRotatef(180,0,1,0);
+
+    // face and rim
+    drawCylinder(0,0,0,1.05f,0.13f,0.14f,0.18f,0.24f);
+    drawCylinder(0,0,-0.02f,0.87f,0.15f,0.92f,0.88f,0.72f);
+
+    // hands
+    glDisable(GL_LIGHTING);
+    glColor3f(0.08f,0.07f,0.05f);
+    glLineWidth(4.0f);
+    glBegin(GL_LINES);
+    glVertex3f(0,0,0.17f); glVertex3f(0.0f,0.58f,0.17f);
+    glVertex3f(0,0,0.17f); glVertex3f(0.42f,0.0f,0.17f);
+    glEnd();
+    glLineWidth(1.0f);
+    glEnable(GL_LIGHTING);
+
+    glPopMatrix();
+}
+
+void drawWallLamp(float x,float y,float z,float rotY=0.0f) {
+    glPushMatrix();
+    glTranslatef(x,y,z);
+    glRotatef(rotY,0,1,0);
+    drawBox(0,0,0,0.18f,0.55f,0.22f,0.32f,0.22f,0.10f,30,0.25f);
+    drawSphere(0,0.35f,0.08f,0.17f,0.95f,0.78f,0.40f);
+    glPopMatrix();
+}
+
 void drawSimpleBust(float x,float z) {
     drawBox(x,0.45f,z,1.20f,0.90f,1.20f,0.90f,0.88f,0.80f);
     drawCylinder(x,0.90f,z,0.30f,0.45f,0.86f,0.86f,0.84f);
@@ -258,25 +378,44 @@ void drawInteriorDecoration() {
     // central corridor carpet
     drawBox(0,0.02f,-11.0f,7.0f,0.04f,44.0f,0.42f,0.04f,0.07f,6,0.02f);
 
-    // left gallery artwork
+    // reception area added in Commit 2
+    drawReceptionDesk();
+    drawSimpleClock();
+
+    // simple room headings
+    drawStrokeText("WILDLIFE GALLERY",-22.6f,7.0f,2.0f,0.0036f,0.18f,0.11f,0.05f);
+    drawStrokeText("CLASSICAL GALLERY",12.5f,7.0f,2.0f,0.0034f,0.18f,0.11f,0.05f);
+    drawStrokeText("HISTORY GALLERY",-22.2f,7.0f,-24.5f,0.0035f,0.18f,0.11f,0.05f);
+    drawStrokeText("NATURE GALLERY",13.2f,7.0f,-24.5f,0.0035f,0.18f,0.11f,0.05f);
+
+    // more wall art than Commit 1
     drawWallArtFront(-17.0f,5.0f,10.82f,4.2f,3.0f,0.15f,0.48f,0.30f);
-    drawWallArtFront(-17.0f,5.0f,-36.82f,4.2f,3.0f,0.12f,0.38f,0.65f);
-
-    // right gallery artwork
+    drawWallArtFront(-7.2f,4.9f,10.82f,3.8f,2.7f,0.52f,0.22f,0.12f);
+    drawWallArtFront( 7.2f,4.9f,10.82f,3.8f,2.7f,0.20f,0.40f,0.70f);
     drawWallArtFront(17.0f,5.0f,10.82f,4.2f,3.0f,0.68f,0.18f,0.16f);
-    drawWallArtFront(17.0f,5.0f,-36.82f,4.2f,3.0f,0.55f,0.44f,0.14f);
 
-    // back wall art
+    drawWallArtFront(-17.0f,5.0f,-36.82f,4.2f,3.0f,0.12f,0.38f,0.65f);
     drawWallArtFront(-6.0f,5.0f,-36.82f,4.5f,3.1f,0.20f,0.62f,0.58f);
     drawWallArtFront( 6.0f,5.0f,-36.82f,4.5f,3.1f,0.62f,0.24f,0.56f);
+    drawWallArtFront(17.0f,5.0f,-36.82f,4.2f,3.0f,0.55f,0.44f,0.14f);
 
-    // seating and plants
-    drawBench(-19.0f,-6.0f,90.0f);
-    drawBench( 19.0f,-20.0f,-90.0f);
+    // wall lamps
+    for(float z : {5.5f,-8.0f,-21.5f}) {
+        drawWallLamp(-23.72f,4.0f,z,90.0f);
+        drawWallLamp( 23.72f,4.0f,z,-90.0f);
+    }
+
+    // seating stays near walls
+    drawBench(-19.8f,-5.5f,90.0f);
+    drawBench( 19.8f,-19.0f,-90.0f);
+
+    // plants
     drawPlant(-21.5f,7.5f);
     drawPlant( 21.5f,7.5f);
+    drawPlant(-21.5f,-31.0f);
+    drawPlant( 21.5f,-31.0f);
 
-    // simple exhibit areas
+    // Wildlife exhibit: Tiger
     drawBox(-16.0f,0.35f,-8.0f,8.2f,0.50f,5.2f,0.90f,0.89f,0.84f);
     glPushMatrix();
     glTranslatef(-16.0f,0.55f,-8.0f);
@@ -284,13 +423,22 @@ void drawInteriorDecoration() {
     glPopMatrix();
     drawStrokeText("ROYAL BENGAL TIGER",-18.2f,0.48f,-5.35f,0.0022f,0.05f,0.05f,0.05f);
 
-    drawSimpleBust(16.0f,-8.0f);
-    drawSimpleBust(18.5f,-8.0f);
+    // Nature exhibit: simple Elephant placeholder added in Commit 2
+    drawBox(16.0f,0.35f,-26.0f,8.0f,0.50f,5.0f,0.90f,0.89f,0.84f);
+    drawSimpleElephant(16.0f,-26.0f);
+    drawStrokeText("ASIAN ELEPHANT",13.9f,0.48f,-23.35f,0.0022f,0.05f,0.05f,0.05f);
 
-    drawArtifact(-16.5f,-26.0f);
-    drawArtifact(-13.5f,-26.0f);
+    // Classical area
+    drawSimpleBust(15.0f,-8.0f);
+    drawSimpleBust(18.0f,-8.0f);
+    drawSimpleBust(16.5f,-12.0f);
 
-    // central sculpture
+    // History artifacts
+    drawArtifact(-17.5f,-26.0f);
+    drawArtifact(-14.2f,-26.0f);
+    drawArtifact(-15.8f,-30.0f);
+
+    // central animated sculpture
     glPushMatrix();
     glTranslatef(0,1.45f,-20.0f);
     glRotatef(fanAngle,0,1,0);
@@ -301,6 +449,7 @@ void drawInteriorDecoration() {
     glutSolidTorus(0.16f,0.82f,18,36);
     glPopMatrix();
     drawBox(0,0.35f,-20.0f,3.5f,0.7f,3.5f,0.92f,0.90f,0.84f);
+    drawStrokeText("KINETIC SCULPTURE",-1.95f,0.68f,-18.15f,0.0021f,0.05f,0.05f,0.05f);
 }
 
 void drawCeilingFan(float x,float z) {
@@ -323,6 +472,7 @@ void setupLights() {
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_LIGHT1);
+    glEnable(GL_LIGHT2);
 
     GLfloat globalAmbient[] = {0.16f,0.16f,0.18f,1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT,globalAmbient);
@@ -344,6 +494,16 @@ void setupLights() {
     glLightfv(GL_LIGHT1,GL_DIFFUSE,dif1);
     glLightfv(GL_LIGHT1,GL_SPECULAR,spe1);
     glLightfv(GL_LIGHT1,GL_POSITION,pos1);
+
+    // Commit 2: a soft warm light near the entrance/reception.
+    GLfloat amb2[] = {0.06f,0.05f,0.03f,1};
+    GLfloat dif2[] = {0.70f,0.48f,0.24f,1};
+    GLfloat spe2[] = {0.35f,0.28f,0.18f,1};
+    GLfloat pos2[] = {0.0f,6.6f,7.5f,1};
+    glLightfv(GL_LIGHT2,GL_AMBIENT,amb2);
+    glLightfv(GL_LIGHT2,GL_DIFFUSE,dif2);
+    glLightfv(GL_LIGHT2,GL_SPECULAR,spe2);
+    glLightfv(GL_LIGHT2,GL_POSITION,pos2);
 }
 
 // -------------------- Camera / collision --------------------------
@@ -410,8 +570,8 @@ void drawHUD() {
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
     glColor3f(1,1,1);
-    drawBitmapText(12,winH-22,"Interactive 3D Smart Museum - Early Base Version");
-    drawBitmapText(12,winH-42,"WASD: walk | Mouse: look | J/L: move Tiger | R/T: rotate | +/-: scale | P: animation | ESC: exit");
+    drawBitmapText(12,winH-22,"Interactive 3D Smart Museum - Commit 2");
+    drawBitmapText(12,winH-42,"WASD: walk | Mouse: look | J/L/I/K/U/O: move Tiger | R/T: rotate | +/-: scale | P: animation | ESC: exit");
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
 
@@ -537,7 +697,7 @@ int main(int argc,char** argv) {
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(winW,winH);
     glutInitWindowPosition(80,40);
-    glutCreateWindow("Interactive 3D Smart Museum - Early Base");
+    glutCreateWindow("Interactive 3D Smart Museum - Commit 2");
 
     initOpenGL();
 
