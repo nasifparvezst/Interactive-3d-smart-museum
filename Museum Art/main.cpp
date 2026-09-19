@@ -10,26 +10,26 @@
 
 #include <cmath>
 #include <string>
+#include <sstream>
+#include <iomanip>
 
 // ================================================================
 // Interactive 3D Smart Museum & Art Gallery
-// Expanded Gallery Version / Commit 3
+// Interactive Controls Version / Commit 4
 // CSE 444 Computer Graphics Project
 //
-// Development added after Commit 2:
-// - Expanded one-floor museum decoration
-// - Added Spotted Deer exhibit
-// - Added side-wall artwork and artwork title plaques
-// - Added picture lights above selected paintings
-// - Added rope barriers around major animal exhibits
-// - Added decorative floor borders and corridor direction signs
-// - Added extra sculpture/pedestal pieces for a richer museum feel
-// - First-person WASD + mouse look retained
-// - Tiger translation/rotation/scaling controls retained
-// - Multiple lights + material properties preserved
+// Development added after Commit 3:
+// - Added multi-object exhibit selection (Tiger / Elephant / Deer / Kinetic Art)
+// - Translation, rotation and scaling now work on the selected exhibit
+// - Added visible gold selection ring below the active exhibit
+// - Added live HUD showing selected object and transform values
+// - Added F1/F2/F3 controls for the three light sources
+// - Added V overview camera and M mouse-look toggle
+// - Existing galleries, artworks, animal exhibits and decorations retained
+// - First-person WASD + mouse navigation retained
 //
-// Later commits can add multi-object selection, improved animal models,
-// staircase, second floor, textures and Smart Museum interactions.
+// Later commits can improve animal shapes/colors, add staircase,
+// second floor, textures and Smart Museum interactions.
 // ================================================================
 
 constexpr float PI = 3.14159265358979323846f;
@@ -54,14 +54,25 @@ int lastMouseY = 0;
 bool keyDown[256] = {false};
 
 // -------------------- Scene state --------------------------------
-float exhibitX = 0.0f;
-float exhibitY = 0.0f;
-float exhibitZ = 0.0f;
-float exhibitRotY = 0.0f;
-float exhibitScale = 1.0f;
+struct ExhibitTransform {
+    float tx, ty, tz;
+    float rotY;
+    float scale;
+    ExhibitTransform() : tx(0), ty(0), tz(0), rotY(0), scale(1.0f) {}
+};
+
+// 0 = Tiger, 1 = Elephant, 2 = Deer, 3 = Kinetic Sculpture
+ExhibitTransform artXform[4];
+int selectedExhibit = 0;
 
 bool animateScene = true;
 float fanAngle = 0.0f;
+
+bool lightEnabled[3] = {true,true,true};
+bool overviewMode = false;
+Vec3 savedCameraPos;
+float savedYaw = -90.0f;
+float savedPitch = 0.0f;
 
 // -------------------- Helpers ------------------------------------
 float degToRad(float d) { return d * PI / 180.0f; }
@@ -173,9 +184,9 @@ void drawSimpleTiger() {
     const float WH=0.88f;
 
     glPushMatrix();
-    glTranslatef(exhibitX,exhibitY,exhibitZ);
-    glRotatef(exhibitRotY,0,1,0);
-    glScalef(exhibitScale,exhibitScale,exhibitScale);
+    glTranslatef(artXform[0].tx,artXform[0].ty,artXform[0].tz);
+    glRotatef(artXform[0].rotY,0,1,0);
+    glScalef(artXform[0].scale,artXform[0].scale,artXform[0].scale);
 
     drawSphere(0,1.25f,0,1.00f,OR,OG,OB);
     drawSphere(1.10f,1.45f,0,0.62f,OR,OG,OB);
@@ -223,6 +234,9 @@ void drawSimpleElephant(float x,float z) {
 
     glPushMatrix();
     glTranslatef(x,0.50f,z);
+    glTranslatef(artXform[1].tx,artXform[1].ty,artXform[1].tz);
+    glRotatef(artXform[1].rotY,0,1,0);
+    glScalef(artXform[1].scale,artXform[1].scale,artXform[1].scale);
 
     // body + head
     glPushMatrix();
@@ -390,6 +404,9 @@ void drawSimpleDeer(float x,float z) {
 
     glPushMatrix();
     glTranslatef(x,0.50f,z);
+    glTranslatef(artXform[2].tx,artXform[2].ty,artXform[2].tz);
+    glRotatef(artXform[2].rotY,0,1,0);
+    glScalef(artXform[2].scale,artXform[2].scale,artXform[2].scale);
 
     // body
     glPushMatrix();
@@ -635,6 +652,9 @@ void drawInteriorDecoration() {
     // central animated sculpture
     glPushMatrix();
     glTranslatef(0,1.45f,-20.0f);
+    glTranslatef(artXform[3].tx,artXform[3].ty,artXform[3].tz);
+    glRotatef(artXform[3].rotY,0,1,0);
+    glScalef(artXform[3].scale,artXform[3].scale,artXform[3].scale);
     glRotatef(fanAngle,0,1,0);
     setMaterial(0.72f,0.48f,0.12f,64,0.55f);
     glutSolidTorus(0.18f,1.15f,20,40);
@@ -665,12 +685,55 @@ void drawCeilingFan(float x,float z) {
     glPopMatrix();
 }
 
+
+const char* selectedExhibitName() {
+    switch(selectedExhibit) {
+        case 0: return "ROYAL BENGAL TIGER";
+        case 1: return "ASIAN ELEPHANT";
+        case 2: return "SPOTTED DEER";
+        default: return "KINETIC SCULPTURE";
+    }
+}
+
+void drawSelectionRing() {
+    float x=0.0f, y=0.18f, z=0.0f, radius=2.2f;
+
+    if(selectedExhibit==0) {
+        x=-16.0f + artXform[0].tx;
+        y=0.62f + artXform[0].ty;
+        z=-8.0f + artXform[0].tz;
+        radius=2.45f*artXform[0].scale;
+    } else if(selectedExhibit==1) {
+        x=16.0f + artXform[1].tx;
+        y=0.62f + artXform[1].ty;
+        z=-26.0f + artXform[1].tz;
+        radius=2.45f*artXform[1].scale;
+    } else if(selectedExhibit==2) {
+        x=0.0f + artXform[2].tx;
+        y=0.62f + artXform[2].ty;
+        z=-31.0f + artXform[2].tz;
+        radius=2.15f*artXform[2].scale;
+    } else {
+        x=artXform[3].tx;
+        y=0.75f + artXform[3].ty;
+        z=-20.0f + artXform[3].tz;
+        radius=1.65f*artXform[3].scale;
+    }
+
+    glPushMatrix();
+    glTranslatef(x,y,z);
+    glRotatef(90,1,0,0);
+    setMaterial(0.95f,0.70f,0.12f,70,0.70f);
+    glutSolidTorus(0.055f,radius,14,48);
+    glPopMatrix();
+}
+
 // -------------------- Lighting -----------------------------------
 void setupLights() {
     glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_LIGHT1);
-    glEnable(GL_LIGHT2);
+    if(lightEnabled[0]) glEnable(GL_LIGHT0); else glDisable(GL_LIGHT0);
+    if(lightEnabled[1]) glEnable(GL_LIGHT1); else glDisable(GL_LIGHT1);
+    if(lightEnabled[2]) glEnable(GL_LIGHT2); else glDisable(GL_LIGHT2);
 
     GLfloat globalAmbient[] = {0.16f,0.16f,0.18f,1.0f};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT,globalAmbient);
@@ -730,6 +793,7 @@ bool insideWall(float x,float z) {
 }
 
 void updateCamera(float dt) {
+    if(overviewMode) return;
     float speed = 5.0f * dt;
     float yawRad = degToRad(yawAngle);
     float fx = std::cos(yawRad);
@@ -767,9 +831,34 @@ void drawHUD() {
 
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
+
+    // title
     glColor3f(1,1,1);
-    drawBitmapText(12,winH-22,"Interactive 3D Smart Museum - Commit 3");
-    drawBitmapText(12,winH-42,"WASD: walk | Mouse: look | J/L/I/K/U/O: move Tiger | R/T: rotate | +/-: scale | P: animation | ESC: exit");
+    drawBitmapText(12,winH-22,"Interactive 3D Smart Museum - Commit 4");
+    drawBitmapText(12,winH-42,"WASD: walk | Mouse: look | 1-4: select exhibit | J/L I/K U/O: translate | R/T: rotate | +/-: scale");
+    drawBitmapText(12,winH-60,"F1/F2/F3: lights | V: overview | M: mouse look | P: animation | 0: reset selected | ESC: exit");
+
+    // selected exhibit information
+    ExhibitTransform &t = artXform[selectedExhibit];
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(2)
+       << "Selected: " << selectedExhibitName()
+       << "   X=" << t.tx
+       << " Y=" << t.ty
+       << " Z=" << t.tz
+       << " Rot=" << t.rotY
+       << " Scale=" << t.scale;
+
+    glColor3f(1.0f,0.82f,0.28f);
+    drawBitmapText(12,winH-82,ss.str());
+
+    std::string lights = std::string("Lights: [F1 ")
+                       + (lightEnabled[0]?"ON":"OFF")
+                       + "] [F2 " + (lightEnabled[1]?"ON":"OFF")
+                       + "] [F3 " + (lightEnabled[2]?"ON":"OFF") + "]";
+    glColor3f(0.82f,0.88f,1.0f);
+    drawBitmapText(12,winH-102,lights);
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
 
@@ -804,6 +893,7 @@ void display() {
     drawExterior();
     drawMuseumShell();
     drawInteriorDecoration();
+    drawSelectionRing();
     drawCeilingFan(0,4.0f);
     drawCeilingFan(0,-10.0f);
     drawCeilingFan(0,-28.0f);
@@ -821,26 +911,73 @@ void reshape(int w,int h) {
 // -------------------- Input ---------------------------------------
 void keyboardDown(unsigned char key,int,int) {
     keyDown[key] = true;
+    ExhibitTransform &t = artXform[selectedExhibit];
 
     switch(key) {
-        case 27: std::exit(0); break;
-        case 'j': case 'J': exhibitX -= 0.18f; break;
-        case 'l': case 'L': exhibitX += 0.18f; break;
-        case 'i': case 'I': exhibitZ -= 0.18f; break;
-        case 'k': case 'K': exhibitZ += 0.18f; break;
-        case 'u': case 'U': exhibitY += 0.12f; break;
-        case 'o': case 'O': exhibitY -= 0.12f; break;
-        case 'r': case 'R': exhibitRotY += 5.0f; break;
-        case 't': case 'T': exhibitRotY -= 5.0f; break;
-        case '+': case '=': exhibitScale += 0.05f; break;
-        case '-': case '_': exhibitScale = (exhibitScale>0.25f)?exhibitScale-0.05f:exhibitScale; break;
-        case '0': exhibitX=exhibitY=exhibitZ=exhibitRotY=0; exhibitScale=1; break;
-        case 'p': case 'P': animateScene = !animateScene; break;
+        case 27:
+            std::exit(0);
+            break;
+
+        case '1': selectedExhibit=0; break;
+        case '2': selectedExhibit=1; break;
+        case '3': selectedExhibit=2; break;
+        case '4': selectedExhibit=3; break;
+
+        case 'j': case 'J': t.tx -= 0.20f; break;
+        case 'l': case 'L': t.tx += 0.20f; break;
+        case 'i': case 'I': t.tz -= 0.20f; break;
+        case 'k': case 'K': t.tz += 0.20f; break;
+        case 'u': case 'U': t.ty += 0.14f; break;
+        case 'o': case 'O': t.ty -= 0.14f; break;
+        case 'r': case 'R': t.rotY += 6.0f; break;
+        case 't': case 'T': t.rotY -= 6.0f; break;
+        case '+': case '=': t.scale += 0.06f; break;
+        case '-': case '_':
+            if(t.scale>0.30f) t.scale -= 0.06f;
+            break;
+
+        case '0':
+            t = ExhibitTransform();
+            break;
+
+        case 'p': case 'P':
+            animateScene = !animateScene;
+            break;
+
+        case 'm': case 'M':
+            mouseLook = !mouseLook;
+            firstMouse = true;
+            break;
+
+        case 'v': case 'V':
+            if(!overviewMode) {
+                savedCameraPos = cameraPos;
+                savedYaw = yawAngle;
+                savedPitch = pitchAngle;
+                cameraPos = Vec3(0.0f,18.0f,32.0f);
+                yawAngle = -90.0f;
+                pitchAngle = -24.0f;
+                overviewMode = true;
+            } else {
+                cameraPos = savedCameraPos;
+                yawAngle = savedYaw;
+                pitchAngle = savedPitch;
+                overviewMode = false;
+            }
+            firstMouse = true;
+            break;
     }
 }
 
 void keyboardUp(unsigned char key,int,int) {
     keyDown[key] = false;
+}
+
+
+void specialKeyDown(int key,int,int) {
+    if(key==GLUT_KEY_F1) lightEnabled[0] = !lightEnabled[0];
+    if(key==GLUT_KEY_F2) lightEnabled[1] = !lightEnabled[1];
+    if(key==GLUT_KEY_F3) lightEnabled[2] = !lightEnabled[2];
 }
 
 void mouseMotion(int x,int y) {
@@ -895,7 +1032,7 @@ int main(int argc,char** argv) {
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(winW,winH);
     glutInitWindowPosition(80,40);
-    glutCreateWindow("Interactive 3D Smart Museum - Commit 3");
+    glutCreateWindow("Interactive 3D Smart Museum - Commit 4");
 
     initOpenGL();
 
@@ -903,6 +1040,7 @@ int main(int argc,char** argv) {
     glutReshapeFunc(reshape);
     glutKeyboardFunc(keyboardDown);
     glutKeyboardUpFunc(keyboardUp);
+    glutSpecialFunc(specialKeyDown);
     glutPassiveMotionFunc(mouseMotion);
     glutMotionFunc(mouseMotion);
     glutTimerFunc(16,timer,0);
