@@ -15,21 +15,20 @@
 
 // ================================================================
 // Interactive 3D Smart Museum & Art Gallery
-// Interactive Controls Version / Commit 4
+// Animal & Exhibit Polish Version / Commit 5
 // CSE 444 Computer Graphics Project
 //
-// Development added after Commit 3:
-// - Added multi-object exhibit selection (Tiger / Elephant / Deer / Kinetic Art)
-// - Translation, rotation and scaling now work on the selected exhibit
-// - Added visible gold selection ring below the active exhibit
-// - Added live HUD showing selected object and transform values
-// - Added F1/F2/F3 controls for the three light sources
-// - Added V overview camera and M mouse-look toggle
-// - Existing galleries, artworks, animal exhibits and decorations retained
-// - First-person WASD + mouse navigation retained
+// Development added after Commit 4:
+// - Redesigned Tiger with a longer feline body, white belly/muzzle and visible stripes
+// - Improved Asian Elephant with natural gray shades, bigger ears, trunk and tusks
+// - Improved Spotted Deer with slimmer body, white spots and clearer antlers
+// - Added richer museum-style animal information cards
+// - Added small spotlight fixtures above major animal exhibits
+// - Existing multi-object transform controls, HUD and light toggles retained
+// - Existing galleries, artwork, benches, plants and decorations retained
 //
-// Later commits can improve animal shapes/colors, add staircase,
-// second floor, textures and Smart Museum interactions.
+// Later commits can add more room structure, textures, staircase,
+// second floor and Smart Museum interactions.
 // ================================================================
 
 constexpr float PI = 3.14159265358979323846f;
@@ -109,6 +108,19 @@ void drawSphere(float x,float y,float z,float radius,
     glPopMatrix();
 }
 
+
+void drawScaledSphere(float x,float y,float z,
+                      float sx,float sy,float sz,
+                      float r,float g,float b,
+                      float shiny=20.0f,float spec=0.16f) {
+    glPushMatrix();
+    glTranslatef(x,y,z);
+    glScalef(sx,sy,sz);
+    setMaterial(r,g,b,shiny,spec);
+    glutSolidSphere(1.0,28,20);
+    glPopMatrix();
+}
+
 void drawCylinder(float x,float y,float z,
                   float radius,float height,
                   float r,float g,float b) {
@@ -178,59 +190,103 @@ void drawPlant(float x,float z) {
 
 // -------------------- Basic exhibit models ------------------------
 void drawSimpleTiger() {
-    // Early placeholder tiger: later commits will redesign it.
-    const float OR=0.88f, OG=0.34f, OB=0.05f;
-    const float BK=0.03f;
-    const float WH=0.88f;
+    // Commit 5: improved Royal Bengal Tiger built from OpenGL primitives.
+    const float OR  = 0.92f, OG  = 0.34f, OB  = 0.055f;
+    const float OR2 = 0.76f, OG2 = 0.22f, OB2 = 0.030f;
+    const float WHR = 0.96f, WHG = 0.86f, WHB = 0.68f;
+    const float BK  = 0.025f;
 
     glPushMatrix();
     glTranslatef(artXform[0].tx,artXform[0].ty,artXform[0].tz);
     glRotatef(artXform[0].rotY,0,1,0);
     glScalef(artXform[0].scale,artXform[0].scale,artXform[0].scale);
 
-    drawSphere(0,1.25f,0,1.00f,OR,OG,OB);
-    drawSphere(1.10f,1.45f,0,0.62f,OR,OG,OB);
-    drawSphere(1.58f,1.40f,0,0.42f,OR,OG,OB);
-    drawSphere(1.86f,1.30f,0,0.28f,WH,WH*0.95f,WH*0.78f);
+    // Long body + shoulder/haunch masses
+    drawScaledSphere(-0.25f,1.28f,0.0f,1.62f,0.68f,0.58f,OR,OG,OB,18,0.10f);
+    drawScaledSphere( 0.88f,1.38f,0.0f,0.76f,0.70f,0.58f,OR2,OG2,OB2,18,0.10f);
+    drawScaledSphere(-1.28f,1.30f,0.0f,0.72f,0.72f,0.58f,OR2,OG2,OB2,18,0.10f);
 
-    // ears
-    glPushMatrix();
-    glTranslatef(1.25f,1.95f,0.35f);
-    setMaterial(BK,BK,BK,8,0.05f);
-    glRotatef(-90,1,0,0);
-    glutSolidCone(0.18f,0.42f,16,6);
-    glPopMatrix();
-    glPushMatrix();
-    glTranslatef(1.25f,1.95f,-0.35f);
-    setMaterial(BK,BK,BK,8,0.05f);
-    glRotatef(-90,1,0,0);
-    glutSolidCone(0.18f,0.42f,16,6);
-    glPopMatrix();
+    // White/cream underside and chest
+    drawScaledSphere(-0.10f,0.96f,0.0f,1.18f,0.24f,0.50f,WHR,WHG,WHB,10,0.05f);
+    drawScaledSphere( 1.02f,1.25f,0.0f,0.38f,0.48f,0.46f,WHR,WHG,WHB,10,0.05f);
 
-    // legs
-    for(float lx : {-0.65f,0.55f}) {
-        for(float lz : {-0.48f,0.48f}) {
-            drawCylinder(lx,0.15f,lz,0.15f,0.85f,OR,OG,OB);
-            drawSphere(lx,0.12f,lz,0.22f,OR*0.80f,OG*0.75f,OB);
-        }
+    // Neck and head
+    drawScaledSphere(1.18f,1.68f,0.0f,0.58f,0.62f,0.50f,OR,OG,OB,18,0.10f);
+    drawScaledSphere(1.78f,1.88f,0.0f,0.64f,0.56f,0.52f,OR,OG,OB,18,0.10f);
+
+    // Cheeks and muzzle
+    drawScaledSphere(2.18f,1.76f, 0.22f,0.38f,0.27f,0.26f,WHR,WHG,WHB,10,0.04f);
+    drawScaledSphere(2.18f,1.76f,-0.22f,0.38f,0.27f,0.26f,WHR,WHG,WHB,10,0.04f);
+    drawScaledSphere(2.42f,1.73f,0.0f,0.17f,0.12f,0.18f,BK,BK,BK,8,0.02f);
+
+    // Eyes
+    drawSphere(1.98f,2.04f, 0.39f,0.075f,0.92f,0.68f,0.15f);
+    drawSphere(1.98f,2.04f,-0.39f,0.075f,0.92f,0.68f,0.15f);
+    drawSphere(2.03f,2.04f, 0.395f,0.035f,BK,BK,BK);
+    drawSphere(2.03f,2.04f,-0.395f,0.035f,BK,BK,BK);
+
+    // Ears
+    for(float side : {-1.0f,1.0f}) {
+        glPushMatrix();
+        glTranslatef(1.55f,2.38f,0.34f*side);
+        glRotatef(-90,1,0,0);
+        setMaterial(BK,BK,BK,10,0.04f);
+        glutSolidCone(0.22f,0.50f,18,7);
+        glPopMatrix();
+
+        glPushMatrix();
+        glTranslatef(1.57f,2.40f,0.34f*side);
+        glRotatef(-90,1,0,0);
+        setMaterial(0.88f,0.45f,0.28f,8,0.03f);
+        glutSolidCone(0.13f,0.34f,16,6);
+        glPopMatrix();
     }
 
-    // simple dark stripes
-    for(float sx : {-0.65f,-0.30f,0.10f,0.45f})
-        drawBox(sx,1.42f,0.91f,0.10f,0.55f,0.05f,BK,BK,BK,8,0.02f);
+    // Four legs + paws
+    const float legX[4] = {-1.05f,-0.48f,0.58f,1.05f};
+    const float legZ[4] = { 0.42f,-0.42f,0.42f,-0.42f};
+    for(int i=0;i<4;i++) {
+        drawScaledSphere(legX[i],0.82f,legZ[i],0.25f,0.42f,0.23f,OR2,OG2,OB2,12,0.05f);
+        drawCylinder(legX[i],0.15f,legZ[i],0.14f,0.62f,OR,OG,OB);
+        drawScaledSphere(legX[i]+0.08f,0.12f,legZ[i],0.30f,0.13f,0.22f,OR2,OG2,OB2,10,0.04f);
+    }
 
-    // tail
-    drawCylinder(-1.05f,1.20f,0,0.10f,1.15f,OR,OG,OB);
+    // Tail built as visible curved segments
+    for(int i=0;i<7;i++) {
+        float tx = -1.70f - 0.24f*i;
+        float ty = 1.35f + 0.14f*i - 0.018f*i*i;
+        float tz = 0.06f*i;
+        bool dark = (i==3 || i==5 || i==6);
+        drawScaledSphere(tx,ty,tz,0.22f,0.13f,0.13f,
+                         dark?BK:OR2,
+                         dark?BK:OG2,
+                         dark?BK:OB2,10,0.03f);
+    }
+
+    // Bengal stripes on both visible body sides
+    const float stripeX[7] = {-1.20f,-0.85f,-0.45f,-0.05f,0.35f,0.70f,1.02f};
+    for(int i=0;i<7;i++) {
+        float h = 0.34f + 0.06f*(i%3);
+        drawBox(stripeX[i],1.54f, 0.585f,0.10f,h,0.045f,BK,BK,BK,6,0.02f);
+        drawBox(stripeX[i],1.54f,-0.585f,0.10f,h,0.045f,BK,BK,BK,6,0.02f);
+    }
+
+    // Face stripes
+    drawBox(1.62f,2.12f, 0.48f,0.08f,0.26f,0.035f,BK,BK,BK,6,0.02f);
+    drawBox(1.62f,2.12f,-0.48f,0.08f,0.26f,0.035f,BK,BK,BK,6,0.02f);
+    drawBox(1.92f,2.18f, 0.46f,0.07f,0.20f,0.035f,BK,BK,BK,6,0.02f);
+    drawBox(1.92f,2.18f,-0.46f,0.07f,0.20f,0.035f,BK,BK,BK,6,0.02f);
 
     glPopMatrix();
 }
 
 
 void drawSimpleElephant(float x,float z) {
-    // Commit 2 placeholder elephant: simple but recognizable.
-    const float G  = 0.48f;
-    const float G2 = 0.40f;
-    const float IV = 0.88f;
+    // Commit 5: improved Asian Elephant with natural gray shades.
+    const float G  = 0.43f;
+    const float G2 = 0.35f;
+    const float G3 = 0.50f;
+    const float IV = 0.92f;
 
     glPushMatrix();
     glTranslatef(x,0.50f,z);
@@ -238,56 +294,60 @@ void drawSimpleElephant(float x,float z) {
     glRotatef(artXform[1].rotY,0,1,0);
     glScalef(artXform[1].scale,artXform[1].scale,artXform[1].scale);
 
-    // body + head
-    glPushMatrix();
-    glScalef(1.70f,1.05f,0.95f);
-    drawSphere(0.0f,1.25f,0.0f,0.95f,G,G,G);
-    glPopMatrix();
+    // Barrel body, shoulder and rump
+    drawScaledSphere(-0.28f,1.35f,0.0f,1.65f,1.00f,0.83f,G,G,G+0.02f,14,0.06f);
+    drawScaledSphere( 0.95f,1.48f,0.0f,0.82f,0.92f,0.76f,G2,G2,G2+0.02f,14,0.06f);
+    drawScaledSphere(-1.45f,1.32f,0.0f,0.72f,0.88f,0.72f,G,G,G+0.02f,14,0.06f);
 
-    drawSphere(1.45f,1.45f,0.0f,0.72f,G2,G2,G2);
+    // Head
+    drawScaledSphere(1.72f,1.85f,0.0f,0.78f,0.80f,0.68f,G3,G3,G3+0.02f,14,0.06f);
+    drawScaledSphere(1.88f,2.28f,0.0f,0.50f,0.40f,0.52f,G3,G3,G3+0.02f,12,0.05f);
 
-    // ears
-    glPushMatrix();
-    glTranslatef(1.25f,1.52f,0.58f);
-    glScalef(0.16f,0.72f,0.62f);
-    drawSphere(0,0,0,1.0f,0.43f,0.38f,0.38f);
-    glPopMatrix();
-
-    glPushMatrix();
-    glTranslatef(1.25f,1.52f,-0.58f);
-    glScalef(0.16f,0.72f,0.62f);
-    drawSphere(0,0,0,1.0f,0.43f,0.38f,0.38f);
-    glPopMatrix();
-
-    // legs
-    for(float lx : {-0.85f,0.65f}) {
-        for(float lz : {-0.52f,0.52f}) {
-            drawCylinder(lx,0.05f,lz,0.20f,0.90f,G2,G2,G2);
-            drawSphere(lx,0.08f,lz,0.25f,0.36f,0.36f,0.36f);
-        }
+    // Broad Asian elephant ears
+    for(float side : {-1.0f,1.0f}) {
+        drawScaledSphere(1.25f,1.88f,0.64f*side,
+                         0.56f,0.72f,0.10f,
+                         0.39f,0.36f,0.37f,10,0.04f);
+        drawScaledSphere(1.28f,1.88f,0.69f*side,
+                         0.38f,0.50f,0.045f,
+                         0.54f,0.43f,0.43f,8,0.03f);
     }
 
-    // trunk
-    drawCylinder(1.83f,0.78f,0.0f,0.13f,1.05f,G2,G2,G2);
-    drawSphere(1.83f,0.73f,0.0f,0.16f,G2,G2,G2);
+    // Four legs with broad feet
+    const float lx[4] = {-1.00f,-0.45f,0.55f,1.00f};
+    const float lz[4] = { 0.52f,-0.52f,0.52f,-0.52f};
+    for(int i=0;i<4;i++) {
+        drawCylinder(lx[i],0.10f,lz[i],0.22f,0.90f,G2,G2,G2);
+        drawScaledSphere(lx[i],0.12f,lz[i],0.36f,0.18f,0.33f,0.34f,0.35f,0.37f,10,0.03f);
+    }
 
-    // tusks
-    glPushMatrix();
-    glTranslatef(1.72f,1.12f,0.32f);
-    glRotatef(15,0,0,1);
-    setMaterial(IV,IV,0.72f,18,0.08f);
-    glutSolidCone(0.08f,0.65f,16,6);
-    glPopMatrix();
+    // Segmented curved trunk
+    for(int i=0;i<6;i++) {
+        float ty = 1.52f - 0.24f*i;
+        float tx = 2.16f + 0.08f*i;
+        float radius = 0.20f - 0.018f*i;
+        drawScaledSphere(tx,ty,0.0f,radius,radius*1.15f,radius,G2,G2,G2,10,0.03f);
+    }
+    drawScaledSphere(2.62f,0.30f,0.0f,0.16f,0.12f,0.15f,G2,G2,G2,10,0.03f);
 
-    glPushMatrix();
-    glTranslatef(1.72f,1.12f,-0.32f);
-    glRotatef(15,0,0,1);
-    setMaterial(IV,IV,0.72f,18,0.08f);
-    glutSolidCone(0.08f,0.65f,16,6);
-    glPopMatrix();
+    // Tusks
+    for(float side : {-1.0f,1.0f}) {
+        glPushMatrix();
+        glTranslatef(2.12f,1.55f,0.34f*side);
+        glRotatef(-22,0,0,1);
+        glRotatef(side*12,0,1,0);
+        setMaterial(IV,IV,0.76f,18,0.06f);
+        glutSolidCone(0.09f,0.62f,18,7);
+        glPopMatrix();
+    }
 
-    // eye
-    drawSphere(1.80f,1.65f,0.48f,0.055f,0.03f,0.03f,0.03f);
+    // Eyes
+    drawSphere(2.03f,2.02f, 0.49f,0.060f,0.025f,0.022f,0.020f);
+    drawSphere(2.03f,2.02f,-0.49f,0.060f,0.025f,0.022f,0.020f);
+
+    // Tail
+    drawCylinder(-1.95f,1.10f,0.0f,0.055f,0.72f,G2,G2,G2);
+    drawScaledSphere(-1.95f,1.02f,0.0f,0.12f,0.24f,0.12f,0.10f,0.08f,0.06f,8,0.02f);
 
     glPopMatrix();
 }
@@ -397,10 +457,10 @@ void drawRopeBarrier(float x1,float z1,float x2,float z2) {
 }
 
 void drawSimpleDeer(float x,float z) {
-    // Commit 3 placeholder Spotted Deer.
-    const float BR=0.56f, BG=0.28f, BB=0.09f;
-    const float BR2=0.42f, BG2=0.18f, BB2=0.05f;
-    const float WH=0.90f;
+    // Commit 5: improved Spotted Deer / Chital.
+    const float BR  = 0.58f, BG  = 0.28f, BB  = 0.08f;
+    const float BR2 = 0.43f, BG2 = 0.18f, BB2 = 0.045f;
+    const float WHR = 0.95f, WHG = 0.88f, WHB = 0.72f;
 
     glPushMatrix();
     glTranslatef(x,0.50f,z);
@@ -408,59 +468,98 @@ void drawSimpleDeer(float x,float z) {
     glRotatef(artXform[2].rotY,0,1,0);
     glScalef(artXform[2].scale,artXform[2].scale,artXform[2].scale);
 
-    // body
-    glPushMatrix();
-    glScalef(1.45f,0.72f,0.60f);
-    drawSphere(0,1.35f,0,0.92f,BR,BG,BB);
-    glPopMatrix();
+    // Slender body
+    drawScaledSphere(-0.20f,1.38f,0.0f,1.35f,0.64f,0.52f,BR,BG,BB,14,0.06f);
+    drawScaledSphere(-1.15f,1.38f,0.0f,0.58f,0.62f,0.50f,BR2,BG2,BB2,14,0.06f);
 
-    // neck + head
-    drawCylinder(1.02f,1.25f,0,0.23f,0.78f,BR2,BG2,BB2);
-    drawSphere(1.22f,2.02f,0,0.45f,BR,BG,BB);
-    drawSphere(1.58f,1.96f,0,0.28f,BR2,BG2,BB2);
+    // Neck and narrow head
+    drawScaledSphere(0.85f,1.73f,0.0f,0.40f,0.78f,0.34f,BR2,BG2,BB2,12,0.05f);
+    drawScaledSphere(1.18f,2.28f,0.0f,0.43f,0.48f,0.34f,BR,BG,BB,12,0.05f);
+    drawScaledSphere(1.50f,2.18f,0.0f,0.30f,0.25f,0.24f,BR2,BG2,BB2,10,0.04f);
 
-    // ears
+    // White throat/belly
+    drawScaledSphere(0.82f,1.62f,0.0f,0.26f,0.54f,0.31f,WHR,WHG,WHB,10,0.04f);
+    drawScaledSphere(-0.15f,1.02f,0.0f,0.90f,0.18f,0.43f,WHR,WHG,WHB,10,0.03f);
+
+    // Long slim legs
+    const float lx[4] = {-0.92f,-0.48f,0.48f,0.82f};
+    const float lz[4] = { 0.34f,-0.34f,0.34f,-0.34f};
+    for(int i=0;i<4;i++) {
+        drawCylinder(lx[i],0.12f,lz[i],0.075f,0.88f,BR2,BG2,BB2);
+        drawScaledSphere(lx[i],0.10f,lz[i],0.15f,0.08f,0.18f,0.055f,0.040f,0.030f,8,0.02f);
+    }
+
+    // Ears
     for(float side : {-1.0f,1.0f}) {
         glPushMatrix();
-        glTranslatef(1.10f,2.42f,0.26f*side);
+        glTranslatef(1.05f,2.68f,0.23f*side);
         glRotatef(-90,1,0,0);
-        setMaterial(BR2,BG2,BB2,10,0.05f);
-        glutSolidCone(0.13f,0.38f,12,5);
+        setMaterial(BR2,BG2,BB2,8,0.03f);
+        glutSolidCone(0.13f,0.34f,14,5);
         glPopMatrix();
     }
 
-    // legs
-    for(float lx : {-0.78f,0.62f}) {
-        for(float lz : {-0.34f,0.34f}) {
-            drawCylinder(lx,0.10f,lz,0.09f,0.98f,BR2,BG2,BB2);
-            drawBox(lx,0.08f,lz,0.16f,0.10f,0.22f,0.05f,0.035f,0.025f);
-        }
+    // Eyes and nose
+    drawSphere(1.38f,2.37f, 0.27f,0.045f,0.02f,0.018f,0.014f);
+    drawSphere(1.38f,2.37f,-0.27f,0.045f,0.02f,0.018f,0.014f);
+    drawSphere(1.76f,2.17f,0.0f,0.08f,0.055f,0.04f,0.03f);
+
+    // White spots on both sides
+    const float sx[12] = {-1.05f,-0.78f,-0.48f,-0.18f,0.10f,0.38f,
+                          -0.90f,-0.60f,-0.30f,0.00f,0.28f,0.56f};
+    const float sy[12] = {1.58f,1.69f,1.61f,1.72f,1.61f,1.68f,
+                          1.28f,1.34f,1.27f,1.36f,1.29f,1.36f};
+    for(int i=0;i<12;i++) {
+        drawScaledSphere(sx[i],sy[i], 0.52f,0.060f,0.050f,0.025f,0.97f,0.91f,0.78f,6,0.01f);
+        drawScaledSphere(sx[i],sy[i],-0.52f,0.060f,0.050f,0.025f,0.97f,0.91f,0.78f,6,0.01f);
     }
 
-    // white chest
-    glPushMatrix();
-    glTranslatef(0.92f,1.45f,0);
-    glScalef(0.28f,0.55f,0.47f);
-    drawSphere(0,0,0,1.0f,WH,WH*0.94f,WH*0.82f);
+    // Antlers: simple branched silhouette
+    for(float side : {-1.0f,1.0f}) {
+        float az = 0.15f*side;
+        drawCylinder(1.03f,2.60f,az,0.035f,0.66f,0.24f,0.13f,0.055f);
+        drawCylinder(1.16f,2.95f,az,0.030f,0.38f,0.24f,0.13f,0.055f);
+        drawCylinder(0.92f,2.90f,az,0.028f,0.32f,0.24f,0.13f,0.055f);
+    }
+
+    // Tail with light tip
+    drawScaledSphere(-1.55f,1.58f,0.0f,0.16f,0.30f,0.12f,BR2,BG2,BB2,8,0.03f);
+    drawScaledSphere(-1.60f,1.74f,0.0f,0.10f,0.15f,0.08f,WHR,WHG,WHB,8,0.02f);
+
     glPopMatrix();
+}
 
-    // spots
-    const float sx[8] = {-0.85f,-0.52f,-0.18f,0.17f,0.50f,-0.70f,-0.34f,0.32f};
-    const float sy[8] = {1.55f,1.68f,1.60f,1.70f,1.56f,1.28f,1.34f,1.31f};
-    for(int i=0;i<8;i++) {
-        drawSphere(sx[i],sy[i],0.55f,0.07f,0.94f,0.88f,0.73f);
-        drawSphere(sx[i],sy[i],-0.55f,0.07f,0.94f,0.88f,0.73f);
-    }
 
-    // antlers
-    drawCylinder(1.08f,2.30f,0.18f,0.035f,0.58f,0.25f,0.13f,0.05f);
-    drawCylinder(1.08f,2.30f,-0.18f,0.035f,0.58f,0.25f,0.13f,0.05f);
-
-    // tail
+void drawAnimalInfoCard(const std::string& line1,
+                        const std::string& line2,
+                        float x,float y,float z,float rotY=0.0f,
+                        float width=4.8f) {
     glPushMatrix();
-    glTranslatef(-1.35f,1.55f,0);
-    glRotatef(-35,0,0,1);
-    drawCylinder(0,0,0,0.07f,0.48f,BR2,BG2,BB2);
+    glTranslatef(x,y,z);
+    glRotatef(rotY,0,1,0);
+
+    // ivory museum card + brass edge
+    drawBox(0,0,0,width,0.96f,0.10f,0.96f,0.95f,0.90f,14,0.05f);
+    drawBox(0, 0.45f,0.06f,width,0.035f,0.03f,0.58f,0.43f,0.16f,20,0.12f);
+    drawBox(0,-0.45f,0.06f,width,0.035f,0.03f,0.58f,0.43f,0.16f,20,0.12f);
+
+    drawStrokeText(line1,-width*0.43f,0.10f,0.07f,0.00155f,0.05f,0.045f,0.04f);
+    drawStrokeText(line2,-width*0.43f,-0.25f,0.07f,0.00110f,0.14f,0.12f,0.10f);
+
+    glPopMatrix();
+}
+
+void drawExhibitSpotlight(float x,float y,float z,float rotY=0.0f) {
+    glPushMatrix();
+    glTranslatef(x,y,z);
+    glRotatef(rotY,0,1,0);
+
+    drawBox(0,0,0,0.42f,0.24f,0.32f,0.16f,0.14f,0.12f,32,0.22f);
+    glPushMatrix();
+    glTranslatef(0,-0.18f,0.12f);
+    glRotatef(90,1,0,0);
+    setMaterial(0.92f,0.78f,0.42f,45,0.35f);
+    glutSolidCone(0.20f,0.34f,18,6);
     glPopMatrix();
 
     glPopMatrix();
@@ -620,18 +719,24 @@ void drawInteriorDecoration() {
     glPopMatrix();
     drawStrokeText("ROYAL BENGAL TIGER",-18.2f,0.48f,-5.35f,0.0022f,0.05f,0.05f,0.05f);
     drawRopeBarrier(-19.0f,-4.9f,-13.0f,-4.9f);
+    drawAnimalInfoCard("ROYAL BENGAL TIGER","WILDLIFE COLLECTION",-15.9f,1.05f,-4.45f,0.0f,4.8f);
+    drawExhibitSpotlight(-16.0f,7.55f,-8.0f);
 
     // Nature exhibit: Elephant
     drawBox(16.0f,0.35f,-26.0f,8.0f,0.50f,5.0f,0.90f,0.89f,0.84f);
     drawSimpleElephant(16.0f,-26.0f);
     drawStrokeText("ASIAN ELEPHANT",13.9f,0.48f,-23.35f,0.0022f,0.05f,0.05f,0.05f);
     drawRopeBarrier(13.0f,-22.9f,19.0f,-22.9f);
+    drawAnimalInfoCard("ASIAN ELEPHANT","NATURE COLLECTION",16.0f,1.05f,-22.45f,0.0f,4.5f);
+    drawExhibitSpotlight(16.0f,7.55f,-26.0f);
 
     // Commit 3: Spotted Deer exhibit in rear center
     drawBox(0.0f,0.35f,-31.0f,7.2f,0.50f,4.4f,0.90f,0.89f,0.84f);
     drawSimpleDeer(0.0f,-31.0f);
     drawStrokeText("SPOTTED DEER",-1.65f,0.48f,-28.65f,0.00225f,0.05f,0.05f,0.05f);
     drawRopeBarrier(-2.6f,-28.45f,2.6f,-28.45f);
+    drawAnimalInfoCard("SPOTTED DEER","WILDLIFE COLLECTION",0.0f,1.05f,-28.05f,0.0f,4.2f);
+    drawExhibitSpotlight(0.0f,7.55f,-31.0f);
 
     // Classical area
     drawSimpleBust(15.0f,-8.0f);
@@ -834,7 +939,7 @@ void drawHUD() {
 
     // title
     glColor3f(1,1,1);
-    drawBitmapText(12,winH-22,"Interactive 3D Smart Museum - Commit 4");
+    drawBitmapText(12,winH-22,"Interactive 3D Smart Museum - Commit 5");
     drawBitmapText(12,winH-42,"WASD: walk | Mouse: look | 1-4: select exhibit | J/L I/K U/O: translate | R/T: rotate | +/-: scale");
     drawBitmapText(12,winH-60,"F1/F2/F3: lights | V: overview | M: mouse look | P: animation | 0: reset selected | ESC: exit");
 
@@ -1032,7 +1137,7 @@ int main(int argc,char** argv) {
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(winW,winH);
     glutInitWindowPosition(80,40);
-    glutCreateWindow("Interactive 3D Smart Museum - Commit 4");
+    glutCreateWindow("Interactive 3D Smart Museum - Commit 5");
 
     initOpenGL();
 
